@@ -2,7 +2,6 @@
 
 A web-based **Course Management System** developed to simplify the management of courses, students, and faculty. The system provides an intuitive interface for managing academic information, course enrollment, and student records efficiently.
 
----
 
 ## 🚀 Features
 
@@ -35,13 +34,6 @@ A web-based **Course Management System** developed to simplify the management of
 - CSS3
 - Bootstrap
 - JavaScript
-
-### Backend
-- Python
-- Flask
-
-### Database
-- SQLite / MySQL *(Update based on your project)*
 
 
 ## ⚙️ Installation
