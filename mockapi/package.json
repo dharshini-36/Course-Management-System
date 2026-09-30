@@ -1,0 +1,14 @@
+{
+  "name": "mockapi",
+  "version": "1.0.0",
+  "description": "json-server mock API for LearnHub",
+  "main": "index.js",
+  "scripts": {
+    "start": "json-server db.json --port 5000"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "json-server": "^1.0.0-beta.15"
+  }
+}
