@@ -107,6 +107,18 @@
       "instructor": "Prof. Chip Huyen",
       "topics": "Docker, FastAPI, CI/CD for ML, Monitoring, Model Drift",
       "outcome": "Deploy and maintain ML models in production environments."
+    },
+    {
+      "title": "NLP",
+      "category": "Artificial Intelligence",
+      "level": "Beginner",
+      "weeks": "2",
+      "hours": "60",
+      "rating": "4.8",
+      "instructor": "Dr. Kiruthiga",
+      "topics": "About AI, Advantages and Disadvantages",
+      "outcome": "Understands about NLP",
+      "id": "jsa1uLf_EJ0"
     }
   ],
   "students": [
@@ -124,7 +136,7 @@
       "email": "dharshininata@gmail.com",
       "department": "AI",
       "password": "pass123",
-      "id": "lFJT53cvBKY"
+      "id": "BJIdEchgTag"
     }
   ],
   "enrollments": [
@@ -135,8 +147,8 @@
       "rollNo": "E24AI007",
       "email": "dharshininata@gmail.com",
       "status": "In Progress",
-      "date": "28/9/2026",
-      "id": "K2j4OPbEMGI"
+      "date": "30/9/2026",
+      "id": "0Hsr5uf9DaQ"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
