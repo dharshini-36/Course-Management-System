@@ -11,12 +11,12 @@ export function CourseProvider({ children }) {
     async function fetchCourses() {
         try {
             setLoading(true);
-            const response = await api.get("/courses");
-            setCourses(response.data);
+            const response = await api.get("/api/v1/courses");
+            setCourses(response.data.data);
             setError(null);
         } catch (err) {
             console.error("Failed to fetch courses:", err);
-            setError("Unable to load courses. Is the mock API running on port 5000?");
+            setError("Unable to load courses. Is the backend running on port 5000?");
         } finally {
             setLoading(false);
         }
@@ -26,21 +26,38 @@ export function CourseProvider({ children }) {
         fetchCourses();
     }, []);
 
-    async function addCourse(course) {
-        const response = await api.post("/courses", course);
-        setCourses((prev) => [...prev, response.data]);
-        return response.data;
+    async function addCourse(courseData) {
+        try {
+            const response = await api.post("/api/v1/courses", courseData);
+            const newCourse = response.data.data;
+            setCourses((prev) => [...prev, newCourse]);
+            return newCourse;
+        } catch (err) {
+            console.error("Error adding course:", err);
+            throw err;
+        }
     }
 
-    async function updateCourse(id, updatedCourse) {
-        const response = await api.put(`/courses/${id}`, { ...updatedCourse, id });
-        setCourses((prev) => prev.map((c) => (c.id === id ? response.data : c)));
-        return response.data;
+    async function updateCourse(id, courseData) {
+        try {
+            const response = await api.put(`/api/v1/courses/${id}`, courseData);
+            const updatedCourse = response.data.data;
+            setCourses((prev) => prev.map((c) => (c.id === id ? updatedCourse : c)));
+            return updatedCourse;
+        } catch (err) {
+            console.error("Error updating course:", err);
+            throw err;
+        }
     }
 
     async function deleteCourse(id) {
-        await api.delete(`/courses/${id}`);
-        setCourses((prev) => prev.filter((c) => c.id !== id));
+        try {
+            await api.delete(`/api/v1/courses/${id}`);
+            setCourses((prev) => prev.filter((c) => c.id !== id));
+        } catch (err) {
+            console.error("Error deleting course:", err);
+            throw err;
+        }
     }
 
     return (
