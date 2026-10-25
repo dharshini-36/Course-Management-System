@@ -1,6 +1,10 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getUnreadCount } from "../data/notificationsStore";
+import LogoutButton from "./LogoutButton";
+import { isLoggedIn } from "../utils/auth";
+
+{isLoggedIn() && <LogoutButton />}
 
 export default function Navbar() {
     const { student, admin, logoutStudent, logoutAdmin } = useAuth();

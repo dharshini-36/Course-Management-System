@@ -18,7 +18,7 @@ function CourseMessage({ title, message }) {
     );
 }
 
-// Loads the course from the mock API (GET /courses/:id), then shows the form.
+// Loads the course from the backend (GET /api/v1/courses/:id), then shows the form.
 export default function EditCourse() {
     const [searchParams] = useSearchParams();
     const courseId = searchParams.get("course");
@@ -31,10 +31,10 @@ export default function EditCourse() {
             return;
         }
         let cancelled = false;
-        api.get(`/courses/${courseId}`)
+        api.get(`/api/v1/courses/${courseId}`)
             .then((res) => {
                 if (cancelled) return;
-                setCourse(res.data);
+                setCourse(res.data.data);
                 setStatus("ready");
             })
             .catch(() => {
@@ -49,7 +49,7 @@ export default function EditCourse() {
         return <CourseMessage title="Loading course..." message="Please wait." />;
     }
     if (status === "notfound") {
-        return <CourseMessage title="Course not found" message="We couldn't find that course. It may have been removed, or the mock API isn't running." />;
+        return <CourseMessage title="Course not found" message="We couldn't find that course. It may have been removed, or the backend isn't running." />;
     }
     return <EditCourseForm course={course} courseId={courseId} />;
 }
@@ -118,7 +118,11 @@ function EditCourseForm({ course, courseId }) {
             navigate("/courses");
         } catch (err) {
             console.error("Failed to update course:", err);
-            alert("Could not save changes. Is the mock API running on port 5000?");
+            if (err.response?.status === 401) {
+                alert("Please log in first to edit a course.");
+            } else {
+                alert("Could not save changes. Please try again.");
+            }
         }
     }
 
@@ -130,7 +134,11 @@ function EditCourseForm({ course, courseId }) {
             navigate("/courses");
         } catch (err) {
             console.error("Failed to delete course:", err);
-            alert("Could not delete the course. Is the mock API running on port 5000?");
+            if (err.response?.status === 401) {
+                alert("Please log in first to delete a course.");
+            } else {
+                alert("Could not delete the course. Please try again.");
+            }
         }
     }
 

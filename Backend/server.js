@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const courseRoutes = require("./routes/courseRoutes");
 const studentRoutes = require("./routes/studentRoutes");
 const enrollmentRoutes = require("./routes/enrollmentRoutes");
+const authRoutes = require("./routes/authRoutes");
 const notFound = require("./middleware/notFoundMiddleware");
 const errorHandler = require("./middleware/errorMiddleware");
 
@@ -20,6 +21,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/courses", courseRoutes);
 
 // -------------------------
 // Test Route

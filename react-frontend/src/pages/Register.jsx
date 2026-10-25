@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PageCss from "../components/PageCss";
-import api from "../services/api";
+import { registerStudent } from "../api/authApi";
 
 export default function Register() {
     const [username, setUsername] = useState("");
@@ -24,24 +24,22 @@ export default function Register() {
         }
 
         try {
-            // Check if email already exists in the mock API (db.json -> students)
-            const res = await api.get("/students");
-            const userExists = res.data.find(
-                (s) => (s.email || "").trim().toLowerCase() === email.trim().toLowerCase()
-            );
-            if (userExists) {
-                setErrorMessage("Email is already registered. Please login.");
-                return;
-            }
-
-            // Save the new student (POST /students)
-            await api.post("/students", { username, fullName, email, department, password });
+            // Register the student in the backend (password is hashed there)
+            await registerStudent({
+                name: fullName,
+                email,
+                password,
+                department
+            });
 
             // Redirect to login page upon successful registration
             navigate("/login");
         } catch (err) {
             console.error("Registration failed:", err);
-            setErrorMessage("Could not register. Is the mock API running on port 5000?");
+            setErrorMessage(
+                err.response?.data?.message ||
+                "Could not register. Is the backend running on port 5000?"
+            );
         }
     }
 

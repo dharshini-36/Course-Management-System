@@ -31,11 +31,13 @@ export function AuthProvider({ children }) {
         setStudent(null);
         localStorage.removeItem("loggedInStudent");
         localStorage.removeItem("currentStudent");
+        sessionStorage.removeItem("token"); // remove the JWT too
     }
 
     function logoutAdmin() {
         setAdmin(null);
         localStorage.removeItem("loggedInAdmin");
+        sessionStorage.removeItem("token"); // remove the JWT too
     }
 
     return (

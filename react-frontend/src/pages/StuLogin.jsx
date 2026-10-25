@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PageCss from "../components/PageCss";
 import { useAuth } from "../auth/AuthContext";
-import api from "../services/api";
+import { loginStudent as loginStudentApi } from "../api/authApi";
 
 export default function StuLogin() {
     const [email, setEmail] = useState("");
@@ -17,27 +17,23 @@ export default function StuLogin() {
         e.stopPropagation();
 
         try {
-            // 1. Get registered students from the mock API (db.json -> students)
-            const res = await api.get("/students");
+            // 1. Ask the backend to check the email + password (JWT login)
+            const result = await loginStudentApi({ email, password });
 
-            // 2. Check if user exists
-            const foundStudent = res.data.find(
-                (s) =>
-                    (s.email || "").trim().toLowerCase() === email.trim().toLowerCase() &&
-                    s.password === password
-            );
+            // 2. Save the JWT so Axios sends it with protected requests
+            sessionStorage.setItem("token", result.token);
 
-            if (!foundStudent) {
-                setErrorMessage("You are not registered. Please register first.");
-                return;
-            }
+            // 3. Update the app's login state (keep fullName for other pages)
+            loginStudent({ ...result.student, fullName: result.student.name });
 
-            // 3. Login and redirect to courses
-            loginStudent(foundStudent);
+            // 4. Redirect to courses
             navigate("/courses");
         } catch (err) {
             console.error("Login failed:", err);
-            setErrorMessage("Could not reach the server. Is the mock API running on port 5000?");
+            setErrorMessage(
+                err.response?.data?.message ||
+                "Could not reach the server. Is the backend running on port 5000?"
+            );
         }
     }
 

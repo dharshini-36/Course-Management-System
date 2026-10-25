@@ -5,7 +5,7 @@ import { useCourses } from "../context/CourseContext";
 import { clearAllEnrollments, getAllEnrollments } from "../data/enrollmentsStore";
 
 export default function AdminDashboard() {
-    // Courses come from the mock API (GET /courses) via CourseContext
+    // Courses come from the backend (GET /api/v1/courses) via CourseContext
     const { courses, loading, error, deleteCourse } = useCourses();
 
     // Read every student's enrollments (admin view isn't scoped to one student)
@@ -28,7 +28,7 @@ export default function AdminDashboard() {
             setEnrollments([]);
         } catch (err) {
             console.error("Failed to clear enrollments:", err);
-            alert("Could not clear enrollments. Is the mock API running on port 5000?");
+            alert("Could not clear enrollments. Is the backend running on port 5000?");
         }
     }
 
@@ -38,7 +38,11 @@ export default function AdminDashboard() {
             await deleteCourse(id);
         } catch (err) {
             console.error("Failed to delete course:", err);
-            alert("Could not delete the course. Is the mock API running on port 5000?");
+            if (err.response?.status === 401) {
+                alert("Please log in first to delete a course.");
+            } else {
+                alert("Could not delete the course. Please try again.");
+            }
         }
     }
 
@@ -67,7 +71,13 @@ export default function AdminDashboard() {
                     </li>
                 </ul>
                 <div className="nav-buttons">
-                    <Link to="/courses" className="login-btn" id="logoutBtn" type="button">
+                    <Link
+                        to="/courses"
+                        className="login-btn"
+                        id="logoutBtn"
+                        type="button"
+                        onClick={() => sessionStorage.removeItem("token")}
+                    >
                         <i className="fa-solid fa-right-from-bracket"></i>
                         Logout
                     </Link>

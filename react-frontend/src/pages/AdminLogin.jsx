@@ -2,11 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PageCss from "../components/PageCss";
 import { useAuth } from "../auth/AuthContext";
-
-// Temporary hardcoded admin credentials. Change these to whatever you like,
-// or replace this whole check later with a real admin registration flow.
-const DEFAULT_ADMIN_EMAIL = "admin@institute.edu";
-const DEFAULT_ADMIN_PASSWORD = "admin123";
+import { loginAdmin as loginAdminApi } from "../api/authApi";
 
 export default function AdminLogin() {
     const [email, setEmail] = useState("");
@@ -16,19 +12,25 @@ export default function AdminLogin() {
     const { loginAdmin } = useAuth();
     const navigate = useNavigate();
 
-    function handleLogin(e) {
+    async function handleLogin(e) {
         e.preventDefault();
 
-        if (
-            email.trim().toLowerCase() === DEFAULT_ADMIN_EMAIL &&
-            password === DEFAULT_ADMIN_PASSWORD
-        ) {
-            loginAdmin({ email: DEFAULT_ADMIN_EMAIL, fullName: "Admin" });
-            navigate("/admin-dashboard");
-            return;
-        }
+        try {
+            // The backend checks the admin email + password and returns a JWT
+            const result = await loginAdminApi({ email, password });
 
-        setErrorMessage("Incorrect email or password.");
+            // Save the JWT so Axios sends it with add / edit / delete requests
+            sessionStorage.setItem("token", result.token);
+
+            loginAdmin({ email: result.admin.email, fullName: "Admin" });
+            navigate("/admin-dashboard");
+        } catch (err) {
+            console.error("Admin login failed:", err);
+            setErrorMessage(
+                err.response?.data?.message ||
+                "Could not reach the server. Is the backend running on port 5000?"
+            );
+        }
     }
 
     return (

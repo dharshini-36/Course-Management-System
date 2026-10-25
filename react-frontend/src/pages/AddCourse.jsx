@@ -53,9 +53,13 @@ export default function AddCourse() {
             addCourseAddedNotification(newCourse);
 
             navigate("/admin-dashboard");
-        } catch (err) {
-            console.error("Failed to add course:", err);
-            alert("Could not save the course. Is the mock API running on port 5000?");
+        } catch (error) {
+            console.error("Failed to add course:", error);
+            if (error.response?.status === 401) {
+                alert("Please log in first to add a course.");
+            } else {
+                alert("Could not save the course. Please try again.");
+            }
         }
     }
 
