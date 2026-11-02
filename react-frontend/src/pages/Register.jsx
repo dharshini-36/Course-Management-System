@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PageCss from "../components/PageCss";
 import { registerStudent } from "../api/authApi";
+import { getErrorMessage } from "../api/errorMessage";
 
 export default function Register() {
     const [username, setUsername] = useState("");
@@ -17,6 +18,11 @@ export default function Register() {
     async function handleRegister(e) {
         e.preventDefault();
         e.stopPropagation();
+
+        if (password.length < 12) {
+            setErrorMessage("Password must contain at least 12 characters.");
+            return;
+        }
 
         if (password !== confirmPassword) {
             setErrorMessage("Passwords do not match!");
@@ -37,7 +43,7 @@ export default function Register() {
         } catch (err) {
             console.error("Registration failed:", err);
             setErrorMessage(
-                err.response?.data?.message ||
+                getErrorMessage(err) ||
                 "Could not register. Is the backend running on port 5000?"
             );
         }
@@ -151,7 +157,8 @@ export default function Register() {
                                 <input 
                                     type="password" 
                                     id="studentPassword" 
-                                    placeholder="••••••••" 
+                                    placeholder="At least 12 characters" 
+                                    minLength={12}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required 

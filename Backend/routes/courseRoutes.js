@@ -6,19 +6,24 @@ const {
     editCourse,
     removeCourse
 } = require("../controllers/courseController");
-const validateCourse = require("../middleware/courseValidation");
 const authMiddleware = require("../middleware/authMiddleware");
 const requireAdmin = require("../middleware/adminMiddleware");
+const validateRequest = require("../middleware/validateRequest");
+const {
+    createCourseValidation,
+    updateCourseValidation,
+    courseIdValidation
+} = require("../validators/courseValidators");
 
 const router = express.Router();
 
 // PUBLIC - anyone can browse courses
-router.get("/", getCourses);                                          // GET all courses
-router.get("/:id", getCourse);                                        // GET one course
+router.get("/", getCourses);                                                              // GET all courses
+router.get("/:id", courseIdValidation, validateRequest, getCourse);                        // GET one course
 
 // PROTECTED - a valid JWT *and* the admin role are required
-router.post("/", authMiddleware, requireAdmin, validateCourse, addCourse); // CREATE course
-router.put("/:id", authMiddleware, requireAdmin, editCourse);              // UPDATE course
-router.delete("/:id", authMiddleware, requireAdmin, removeCourse);         // DELETE course
+router.post("/", authMiddleware, requireAdmin, createCourseValidation, validateRequest, addCourse);       // CREATE
+router.put("/:id", authMiddleware, requireAdmin, updateCourseValidation, validateRequest, editCourse);    // UPDATE
+router.delete("/:id", authMiddleware, requireAdmin, courseIdValidation, validateRequest, removeCourse);   // DELETE
 
 module.exports = router;

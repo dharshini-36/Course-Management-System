@@ -19,10 +19,13 @@ function authMiddleware(req, res, next) {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Only accept tokens signed with our algorithm.
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ["HS256"]
+    });
 
     // Who is logged in (available to later middleware / controllers).
-    req.user = { id: decoded.sub, email: decoded.email, role: decoded.role };
+    req.user = { sub: decoded.sub, id: decoded.sub, email: decoded.email, role: decoded.role };
 
     next();
   } catch (error) {

@@ -56,3 +56,25 @@ export function getCertificatesForStudent(email) {
         .filter((c) => c.email === normalizedEmail)
         .sort((a, b) => new Date(b.issuedAt) - new Date(a.issuedAt));
 }
+
+/**
+ * Re-creates a certificate record (with its ORIGINAL id) when the course was
+ * completed in another browser/device. Certificates live in this browser's
+ * localStorage, but the enrollment (with its certificateId) lives on the server.
+ */
+export function restoreCertificate({ id, courseId, courseName, studentName, rollNo, email, issuedAt }) {
+    if (!id || getCertificateById(id)) return;
+    const issued = issuedAt ? new Date(issuedAt) : new Date();
+    const record = {
+        id,
+        serial: makeSerial(),
+        courseId: courseId || null,
+        courseName,
+        studentName,
+        rollNo,
+        email: (email || "").toLowerCase(),
+        issuedAt: issued.toISOString(),
+        dateLabel: issued.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }),
+    };
+    writeRaw([record, ...readRaw()]);
+}

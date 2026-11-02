@@ -16,6 +16,10 @@ export default function Courses() {
     const { student } = useAuth();
     const navigate = useNavigate();
 
+    // Role-based UI (the backend still enforces the real rules).
+    const role = sessionStorage.getItem("role");
+    const isAdmin = role === "admin";
+
     // Courses come from the mock API (GET /courses) via CourseContext
     const { courses } = useCourses();
 
@@ -23,7 +27,7 @@ export default function Courses() {
     const [enrollments, setEnrollments] = useState([]);
 
     useEffect(() => {
-        if (!student) return;
+        if (!student || isAdmin) return;
         let cancelled = false;
         getEnrollmentsForStudent(student)
             .then((list) => {
@@ -123,7 +127,10 @@ export default function Courses() {
             setIsSuccessStep(true);
         } catch (err) {
             console.error("Enrollment failed:", err);
-            setErrorMessage("Could not save your enrollment. Is the mock API running on port 5000?");
+            setErrorMessage(
+                err.response?.data?.message ||
+                "Could not save your enrollment. Is the backend running on port 5000?"
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -165,10 +172,12 @@ export default function Courses() {
                                     <p className="section-count">{section.courses.length} Courses</p>
                                 </div>
                             </div>
-                            <Link to="/add-course-edit" className="admin-section-btn">
-                                <i className="fa-solid fa-plus"></i>
-                                Add Course
-                            </Link>
+                            {isAdmin && (
+                                <Link to="/add-course-edit" className="admin-section-btn">
+                                    <i className="fa-solid fa-plus"></i>
+                                    Add Course
+                                </Link>
+                            )}
                         </div>
                         {section.courses.length === 0 ? (
                             <p style={{ color: "var(--text-muted)", padding: "12px 0" }}>No courses in this section yet.</p>
@@ -192,19 +201,19 @@ export default function Courses() {
                                                     </span>
                                                 </div>
                                                 <div className="c-card-actions">
-                                                    {status === "not-enrolled" && (
+                                                    {!isAdmin && status === "not-enrolled" && (
                                                         <button type="button" className="enroll-btn" onClick={() => handleOpenModal(course)}>
                                                             <i className="fa-solid fa-graduation-cap"></i>
                                                             Enroll
                                                         </button>
                                                     )}
-                                                    {status === "in-progress" && (
+                                                    {!isAdmin && status === "in-progress" && (
                                                         <Link to={`/learn?course=${course.id}`} className="enroll-btn">
                                                             <i className="fa-solid fa-play"></i>
                                                             Start Learning
                                                         </Link>
                                                     )}
-                                                    {status === "completed" && (
+                                                    {!isAdmin && status === "completed" && (
                                                         <Link
                                                             to={`/learn?course=${course.id}`}
                                                             className="enroll-btn"
@@ -214,9 +223,11 @@ export default function Courses() {
                                                             Completed
                                                         </Link>
                                                     )}
-                                                    <Link to={`/edit-course-login?course=${course.id}`} className="admin-edit-btn" title="Edit Course">
-                                                        <i className="fa-solid fa-pen-to-square"></i>
-                                                    </Link>
+                                                    {isAdmin && (
+                                                        <Link to={`/edit-course-login?course=${course.id}`} className="admin-edit-btn" title="Edit Course">
+                                                            <i className="fa-solid fa-pen-to-square"></i>
+                                                        </Link>
+                                                    )}
                                                 </div>
                                                 <details className="c-details">
                                                     <summary className="view-details-btn">

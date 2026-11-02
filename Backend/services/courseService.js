@@ -1,53 +1,67 @@
-const courses = require("../data/courses");
+const mongoose = require("mongoose");
+const Course = require("../models/Course");
 
-// Get all courses
-const getAllCourses = () => {
-    return courses;
-};
+const isValidId = (id) => mongoose.isValidObjectId(id);
 
-// Get one course
-const getCourseById = (id) => {
-    return courses.find(course => course.id === id);
-};
+// Only these fields can ever be written from a request body.
+const EDITABLE_FIELDS = [
+    "title", "category", "instructor", "level",
+    "weeks", "hours", "rating", "topics", "outcome"
+];
 
-// Create course
-const createCourse = (courseData) => {
-    const newCourse = {
-        id: Date.now().toString(),
-        ...courseData
-    };
-    courses.push(newCourse);
-    return newCourse;
-};
-
-// Update course
-const updateCourse = (id, courseData) => {
-    const index = courses.findIndex(course => course.id === id);
-    if (index === -1) {
-        return null;
+function pickFields(data = {}) {
+    const clean = {};
+    for (const field of EDITABLE_FIELDS) {
+        if (data[field] !== undefined) clean[field] = data[field];
     }
-    courses[index] = {
-        ...courses[index],
-        ...courseData,
-        id
-    };
-    return courses[index];
+    return clean;
+}
+
+// .lean() returns plain objects (faster) - add the "id" the React app reads.
+const withId = (course) => {
+    const { _id, __v, ...rest } = course;
+    return { ...rest, id: String(_id) };
 };
 
-// Delete course
-const deleteCourse = (id) => {
-    const index = courses.findIndex(course => course.id === id);
-    if (index === -1) {
-        return false;
+// Without ?page the full list is returned (the React app needs every course).
+// With ?page=2&limit=10 the list is paginated (limit is capped at 100).
+const getAllCourses = async ({ page, limit } = {}) => {
+    const query = Course.find().sort({ createdAt: 1 });
+
+    if (page !== undefined) {
+        const safePage = Math.max(1, Number.parseInt(page, 10) || 1);
+        const safeLimit = Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 20));
+        query.skip((safePage - 1) * safeLimit).limit(safeLimit);
     }
-    courses.splice(index, 1);
-    return true;
+
+    const [courses, total] = await Promise.all([
+        query.lean(),
+        Course.countDocuments()
+    ]);
+
+    return { courses: courses.map(withId), total };
 };
 
-module.exports = {
-    getAllCourses,
-    getCourseById,
-    createCourse,
-    updateCourse,
-    deleteCourse
+const getCourseById = async (id) => {
+    if (!isValidId(id)) return null;
+    const course = await Course.findById(id).lean();
+    return course ? withId(course) : null;
 };
+
+const createCourse = (courseData) => Course.create(pickFields(courseData));
+
+const updateCourse = async (id, courseData) => {
+    if (!isValidId(id)) return null;
+    return Course.findByIdAndUpdate(id, { $set: pickFields(courseData) }, {
+        returnDocument: "after",
+        runValidators: true
+    });
+};
+
+const deleteCourse = async (id) => {
+    if (!isValidId(id)) return false;
+    const deleted = await Course.findByIdAndDelete(id);
+    return Boolean(deleted);
+};
+
+module.exports = { getAllCourses, getCourseById, createCourse, updateCourse, deleteCourse };

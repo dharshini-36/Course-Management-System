@@ -9,6 +9,7 @@ import {
     markNotificationRead,
 } from "../data/notificationsStore";
 import { getCertificatesForStudent } from "../data/certificatesStore";
+import LiveNotifications from "../components/Notifications";
 
 function timeAgo(iso) {
     const diffMs = Date.now() - new Date(iso).getTime();
@@ -23,7 +24,8 @@ function timeAgo(iso) {
 }
 
 export default function Notifications() {
-    const { student } = useAuth();
+    const { student, admin } = useAuth();
+    const isAdmin = Boolean(admin) && !student;
     const email = student?.email || "";
     const navigate = useNavigate();
 
@@ -66,24 +68,33 @@ export default function Notifications() {
                         </div>
                     </div>
                     <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                        <button
-                            type="button"
-                            className="db-explore-btn"
-                            style={{ background: "var(--surface)", color: "var(--navy)", border: "1.5px solid var(--border)", cursor: "pointer" }}
-                            onClick={handleMarkAllRead}
-                            disabled={unreadCount === 0}
-                        >
-                            <i className="fa-solid fa-check-double"></i>
-                            Mark All as Read
-                        </button>
-                        <Link to="/dashboard" className="db-explore-btn">
+                        {!isAdmin && (
+                            <button
+                                type="button"
+                                className="db-explore-btn"
+                                style={{ background: "var(--surface)", color: "var(--navy)", border: "1.5px solid var(--border)", cursor: "pointer" }}
+                                onClick={handleMarkAllRead}
+                                disabled={unreadCount === 0}
+                            >
+                                <i className="fa-solid fa-check-double"></i>
+                                Mark All as Read
+                            </button>
+                        )}
+                        <Link to={isAdmin ? "/admin-dashboard" : "/dashboard"} className="db-explore-btn">
                             <i className="fa-solid fa-gauge"></i>
-                            Back to Dashboard
+                            {isAdmin ? "Back to Admin Dashboard" : "Back to Dashboard"}
                         </Link>
                     </div>
                 </div>
             </div>
             <main className="db-main">
+                {sessionStorage.getItem("token") && (
+                    <section className="db-section db-section--full">
+                        <LiveNotifications />
+                    </section>
+                )}
+                {!isAdmin && (
+                <>
                 <section className="db-section db-section--full">
                     <div className="db-section-header">
                         <h2>
@@ -165,6 +176,8 @@ export default function Notifications() {
                         )}
                     </div>
                 </section>
+                </>
+                )}
             </main>
         </PageShell>
     );

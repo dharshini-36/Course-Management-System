@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import PageCss from "../components/PageCss";
 import { useAuth } from "../auth/AuthContext";
 import { loginStudent as loginStudentApi } from "../api/authApi";
+import { getErrorMessage } from "../api/errorMessage";
 
 export default function StuLogin() {
     const [email, setEmail] = useState("");
@@ -22,6 +23,7 @@ export default function StuLogin() {
 
             // 2. Save the JWT so Axios sends it with protected requests
             sessionStorage.setItem("token", result.token);
+            sessionStorage.setItem("role", "student"); // used to show/hide role-based buttons
 
             // 3. Update the app's login state (keep fullName for other pages)
             loginStudent({ ...result.student, fullName: result.student.name });
@@ -31,7 +33,7 @@ export default function StuLogin() {
         } catch (err) {
             console.error("Login failed:", err);
             setErrorMessage(
-                err.response?.data?.message ||
+                getErrorMessage(err) ||
                 "Could not reach the server. Is the backend running on port 5000?"
             );
         }

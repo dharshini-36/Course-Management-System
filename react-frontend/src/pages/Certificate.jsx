@@ -2,11 +2,16 @@ import PageShell from "../components/PageShell";
 import { Link, useSearchParams } from "react-router-dom";
 import PageCss from "../components/PageCss";
 import { getCertificateById } from "../data/certificatesStore";
+import { useAuth } from "../auth/AuthContext";
 
 export default function Certificate() {
     const [searchParams] = useSearchParams();
     const certId = searchParams.get("id");
+    const { student } = useAuth();
     const certificate = getCertificateById(certId);
+    // Older certificates may have been saved without a name - use the logged-in student's name.
+    const studentName =
+        certificate?.studentName || student?.fullName || student?.name || student?.username || "Student";
 
     return (
         <PageShell variant="cert">
@@ -52,7 +57,7 @@ export default function Certificate() {
                                 <p className="cert-heading">Certificate of Completion</p>
                                 <h2 className="cert-title">Awarded For Successful Completion</h2>
                                 <p className="cert-presented">This certificate is proudly presented to</p>
-                                <div className="cert-name">{certificate.studentName}</div>
+                                <div className="cert-name">{studentName}</div>
                                 <p className="cert-body-text">
                                     for successfully completing all requirements of the course
                                     <span className="cert-course-name"> {certificate.courseName} </span>

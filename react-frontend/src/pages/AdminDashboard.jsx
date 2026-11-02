@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PageCss from "../components/PageCss";
+import { useAuth } from "../auth/AuthContext";
 import { useCourses } from "../context/CourseContext";
 import { clearAllEnrollments, getAllEnrollments } from "../data/enrollmentsStore";
 
 export default function AdminDashboard() {
     // Courses come from the backend (GET /api/v1/courses) via CourseContext
     const { courses, loading, error, deleteCourse } = useCourses();
+    const { logoutAdmin } = useAuth();
+    const navigate = useNavigate();
+
+    function handleLogout() {
+        logoutAdmin(); // clears the token AND the saved admin state
+        navigate("/");
+    }
 
     // Read every student's enrollments (admin view isn't scoped to one student)
     const [enrollments, setEnrollments] = useState([]);
@@ -49,7 +57,7 @@ export default function AdminDashboard() {
     return (
         <>
             <PageCss href="/css/admin_dashboard.css" />
-                        {/* ================= NAVBAR ================= */}
+            {/* ================= NAVBAR ================= */}
             <nav className="navbar">
                 <div className="logo">
                     <i className="fa-solid fa-graduation-cap"></i>
@@ -65,22 +73,34 @@ export default function AdminDashboard() {
                         </Link>
                     </li>
                     <li>
+                        <Link to="/">Home</Link>
+                    </li>
+                    <li>
                         <Link to="/courses">
-                            View Courses Page
+                            Courses
+                        </Link>
+                    </li>
+                    <li>
+                        <Link to="/notifications">Notifications</Link>
+                    </li>
+                    <li>
+                        {/* Change "/chat" if your App.jsx uses a different path for ChatPage */}
+                        <Link to="/chat">
+                            Chat
                         </Link>
                     </li>
                 </ul>
                 <div className="nav-buttons">
-                    <Link
-                        to="/courses"
+                    <button
                         className="login-btn"
                         id="logoutBtn"
                         type="button"
-                        onClick={() => sessionStorage.removeItem("token")}
+                        onClick={handleLogout}
+                        style={{ cursor: "pointer" }}
                     >
                         <i className="fa-solid fa-right-from-bracket"></i>
                         Logout
-                    </Link>
+                    </button>
                 </div>
             </nav>
             <main className="admin-main">

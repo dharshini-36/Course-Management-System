@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import PageCss from "../components/PageCss";
 import { useAuth } from "../auth/AuthContext";
 import { loginAdmin as loginAdminApi } from "../api/authApi";
+import { getErrorMessage } from "../api/errorMessage";
 
 export default function AdminLogin() {
     const [email, setEmail] = useState("");
@@ -21,13 +22,14 @@ export default function AdminLogin() {
 
             // Save the JWT so Axios sends it with add / edit / delete requests
             sessionStorage.setItem("token", result.token);
+            sessionStorage.setItem("role", "admin"); // used to show/hide role-based buttons
 
             loginAdmin({ email: result.admin.email, fullName: "Admin" });
             navigate("/admin-dashboard");
         } catch (err) {
             console.error("Admin login failed:", err);
             setErrorMessage(
-                err.response?.data?.message ||
+                getErrorMessage(err) ||
                 "Could not reach the server. Is the backend running on port 5000?"
             );
         }
@@ -123,4 +125,4 @@ export default function AdminLogin() {
             
         </>
     );
-}
+}   

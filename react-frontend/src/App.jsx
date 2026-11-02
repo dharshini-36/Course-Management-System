@@ -18,6 +18,9 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Notifications from "./pages/Notifications";
 import LearnCourse from "./pages/LearnCourse";
+import MyCourses from "./pages/MyCourses";
+import MyLearningProgress from "./pages/MyLearningProgress";
+import ChatPage from "./pages/ChatPage";
 
 function App() {
     return (
@@ -72,6 +75,9 @@ function App() {
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/notifications.html" element={<Notifications />} />
             <Route path="/learn" element={<LearnCourse />} />
+            <Route path="/my-courses" element={<MyCourses />} />
+            <Route path="/my-progress" element={<MyLearningProgress />} />
+            <Route path="/chat" element={<ChatPage />} />
         </Routes>
     );
 }

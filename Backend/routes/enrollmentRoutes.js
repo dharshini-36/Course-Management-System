@@ -1,16 +1,23 @@
 const express = require("express");
+const authMiddleware = require("../middleware/authMiddleware");
+const authorizeRoles = require("../middleware/roleMiddleware");
 const {
-    getEnrollments,
-    addEnrollment,
-    editEnrollment,
-    removeEnrollment
+  enrollCourse,
+  getMyCourses,
+  unenrollCourse,
+  getAllEnrollments,
+  clearAllEnrollments,
 } = require("../controllers/enrollmentController");
 
 const router = express.Router();
 
-router.get("/", getEnrollments);
-router.post("/", addEnrollment);
-router.patch("/:id", editEnrollment);
-router.delete("/:id", removeEnrollment);
+// Admin-only (must be declared BEFORE "/:courseId")
+router.get("/all", authMiddleware, authorizeRoles("admin"), getAllEnrollments);
+router.delete("/all", authMiddleware, authorizeRoles("admin"), clearAllEnrollments);
+
+// Student-only
+router.get("/my-courses", authMiddleware, authorizeRoles("student"), getMyCourses);
+router.post("/", authMiddleware, authorizeRoles("student"), enrollCourse);
+router.delete("/:courseId", authMiddleware, authorizeRoles("student"), unenrollCourse);
 
 module.exports = router;

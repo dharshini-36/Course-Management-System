@@ -3496,3 +3496,13 @@ details.c-details p strong{
     margin-left:6px;
     vertical-align:middle;
 }
+/* ---------- Task 13: My Learning Progress page ---------- */
+.progress-page { max-width: 900px; margin: 40px auto; padding: 0 16px; }
+.summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 20px 0 28px; }
+.summary-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+.summary-card h3 { margin: 0; font-size: 28px; color: #4f46e5; }
+.summary-card p { margin: 6px 0 0; color: #6b7280; }
+.progress-item { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.progress-item-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.progress-bar { height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; margin-bottom: 6px; }
+.progress-bar-fill { height: 100%; background: #4f46e5; border-radius: 999px; transition: width .3s; }
