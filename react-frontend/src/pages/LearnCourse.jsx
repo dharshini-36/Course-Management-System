@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PageShell from "../components/PageShell";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import PageCss from "../components/PageCss";
 import { useAuth } from "../auth/AuthContext";
 import { useCourses } from "../context/CourseContext";
-import { findEnrollment, markEnrollmentComplete } from "../data/enrollmentsStore";
+import { findEnrollment, markEnrollmentComplete, saveLessonProgress } from "../data/enrollmentsStore";
+import { flattenLessons, getModules, loadCompletedLessons, saveCompletedLessons } from "../data/curriculum";
+import LessonContent from "../components/LessonContent";
+import "../styles/curriculum.css";
 
 export default function LearnCourse() {
     const { student } = useAuth();
@@ -45,23 +48,64 @@ export default function LearnCourse() {
 
     const isCompleted = enrollment?.status === "Completed";
 
-    const topics = (course?.topics || "")
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
+    const modules = useMemo(() => getModules(course), [course]);
+    const lessons = useMemo(() => flattenLessons(modules), [modules]);
 
-    async function handleMarkComplete() {
-        if (!enrollment) return;
+    // Which lessons this student has finished (kept per student + course).
+    const [savedIds, setSavedIds] = useState(null);
+    const [activeId, setActiveId] = useState(null);
+    const [finishing, setFinishing] = useState(false);
+    const doneIds = savedIds ?? (course && student ? loadCompletedLessons(student.email, course.id) : []);
+
+    // Only count lessons that still exist (an admin may have removed some).
+    const validIds = new Set(lessons.map((l) => l.id));
+    const completedSet = new Set(isCompleted ? lessons.map((l) => l.id) : doneIds.filter((id) => validIds.has(id)));
+    const completedCount = completedSet.size;
+    const total = lessons.length;
+    const percent = total ? Math.round((completedCount / total) * 100) : 0;
+    const allDone = total > 0 && completedCount === total;
+
+    const activeLesson = lessons.find((l) => l.id === activeId) || lessons.find((l) => !completedSet.has(l.id)) || lessons[0] || null;
+    const activeIndex = activeLesson ? lessons.findIndex((l) => l.id === activeLesson.id) : -1;
+
+    function persist(nextIds) {
+        setSavedIds(nextIds);
+        saveCompletedLessons(student.email, course.id, nextIds);
+        if (!isCompleted) {
+            saveLessonProgress({
+                courseId: course.id,
+                completed: nextIds.filter((id) => validIds.has(id)).length,
+                total: Math.max(1, total),
+            }).catch((err) => console.error("Could not sync progress:", err));
+        }
+    }
+
+    function toggleLesson(lesson, goNext) {
+        if (isCompleted) {
+            if (goNext && lessons[activeIndex + 1]) setActiveId(lessons[activeIndex + 1].id);
+            return;
+        }
+        const already = completedSet.has(lesson.id);
+        const nextIds = already && !goNext
+            ? doneIds.filter((id) => id !== lesson.id)
+            : Array.from(new Set([...doneIds, lesson.id]));
+        persist(nextIds);
+        if (goNext && lessons[activeIndex + 1]) setActiveId(lessons[activeIndex + 1].id);
+    }
+
+    async function handleFinish() {
+        if (!enrollment || !allDone || finishing) return;
+        setFinishing(true);
         try {
-            const updated = await markEnrollmentComplete(enrollment);
+            const updated = await markEnrollmentComplete({ ...enrollment, totalLessons: Math.max(1, total) });
             if (!updated) return;
             setEnrollment(updated);
-            if (updated.certificateId) {
-                navigate(`/certificate?id=${updated.certificateId}`);
-            }
+            if (updated.certificateId) navigate(`/certificate?id=${updated.certificateId}`);
         } catch (err) {
-            console.error("Failed to mark complete:", err);
-            alert("Could not save your progress. Is the mock API running on port 5000?");
+            console.error("Failed to complete course:", err);
+            alert("Could not save your progress. Please check your connection and try again.");
+        } finally {
+            setFinishing(false);
         }
     }
 
@@ -139,105 +183,103 @@ export default function LearnCourse() {
                 <p>{course.instructor} &middot; {course.weeks} Weeks &middot; {course.hours} Hours</p>
             </section>
 
-            <div className="course-page-grid">
-                <div className="course-page-content">
-                    {isCompleted && (
-                        <div className="video-complete-card" style={{ marginBottom: "22px", background: "#f0fdf4", borderColor: "#bbf7d0" }}>
-                            <div className="video-complete-left" style={{ color: "#15803d" }}>
-                                <i className="fa-solid fa-circle-check"></i>
-                                <span>You've completed this course. Great work!</span>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="course-overview-text">{course.outcome}</div>
-
-                    <h2 className="course-section-title">
-                        <i className="fa-solid fa-list-ol"></i>
-                        Course Content
-                    </h2>
-                    {topics.length === 0 ? (
-                        <p style={{ color: "var(--text-muted)" }}>No modules listed for this course yet.</p>
-                    ) : (
-                        <div className="unit-accordion">
-                            {topics.map((topic, i) => (
-                                <details className="c-details" key={topic} open={i === 0} style={{ marginBottom: "10px" }}>
-                                    <summary className="view-details-btn">
-                                        <i className="fa-solid fa-chevron-down"></i>
-                                        Unit {i + 1}: {topic}
-                                    </summary>
-                                    <div className="c-details-body">
-                                        <p>
-                                            Work through the "{topic}" module at your own pace. When you've covered
-                                            everything in this course, mark it complete below to unlock your certificate.
-                                        </p>
-                                    </div>
-                                </details>
-                            ))}
-                        </div>
-                    )}
-
-                    <div className="video-complete-card" style={{ marginTop: "24px" }}>
-                        <div className="video-complete-left">
-                            <i className="fa-solid fa-flag-checkered"></i>
-                            {isCompleted ? "Course completed" : "Finished everything above?"}
-                        </div>
-                        {isCompleted ? (
-                            <Link
-                                to={enrollment.certificateId ? `/certificate?id=${enrollment.certificateId}` : "/certificate"}
-                                className="db-complete-btn"
-                            >
-                                <i className="fa-solid fa-certificate"></i> View Certificate
-                            </Link>
-                        ) : (
-                            <button type="button" className="db-complete-btn" onClick={handleMarkComplete}>
-                                <i className="fa-solid fa-check"></i> Mark Complete
-                            </button>
-                        )}
+            <div className="lp-wrap">
+                <div className="lp-progress">
+                    <div className="lp-progress-top">
+                        <span>{isCompleted ? "Course completed" : "Your progress"}</span>
+                        <span>{completedCount} of {total} lessons · {percent}%</span>
                     </div>
+                    <div className="lp-bar"><div style={{ width: `${percent}%` }} /></div>
                 </div>
 
-                <aside className="course-sidebar">
-                    <div className="course-info-card">
-                        <h3>
-                            <i className="fa-solid fa-circle-info"></i>
-                            Course Details
-                        </h3>
-                        <div className="course-info-row">
-                            <i className="fa-regular fa-clock"></i>
-                            Duration
-                            <strong>{course.weeks} Weeks</strong>
-                        </div>
-                        <div className="course-info-row">
-                            <i className="fa-solid fa-signal"></i>
-                            Level
-                            <strong>{course.level}</strong>
-                        </div>
-                        <div className="course-info-row">
-                            <i className="fa-solid fa-tag"></i>
-                            Category
-                            <strong>{course.category}</strong>
-                        </div>
-                        <div className="course-info-row">
-                            <i className="fa-solid fa-user"></i>
-                            Instructor
-                            <strong>{course.instructor}</strong>
-                        </div>
+                {lessons.length === 0 ? (
+                    <div className="lp-main">
+                        <p className="lesson-empty">No lessons have been added to this course yet. Please check back soon.</p>
                     </div>
-                    {topics.length > 0 && (
-                        <div className="course-info-card">
-                            <h3>
-                                <i className="fa-solid fa-graduation-cap"></i>
-                                What You'll Learn
-                            </h3>
-                            <ul className="course-topics-list">
-                                {topics.map((topic) => (
-                                    <li key={topic}>{topic}</li>
-                                ))}
-                            </ul>
-                        </div>
+                ) : (
+                    <div className="lp-grid">
+                        <aside className="lp-side" aria-label="Course modules">
+                            {modules.map((m, mi) => {
+                                const done = m.lessons.filter((l) => completedSet.has(l.id)).length;
+                                return (
+                                    <div className="lp-mod" key={m.id}>
+                                        <div className="lp-mod-title">
+                                            <span>Module {mi + 1}: {m.title}</span>
+                                            <small>{done}/{m.lessons.length}</small>
+                                        </div>
+                                        {m.lessons.map((l) => (
+                                            <button
+                                                type="button"
+                                                key={l.id}
+                                                className={`lp-lesson${l.id === activeLesson.id ? " active" : ""}${completedSet.has(l.id) ? " done" : ""}`}
+                                                onClick={() => setActiveId(l.id)}
+                                            >
+                                                <i className={completedSet.has(l.id) ? "fa-solid fa-circle-check" : "fa-regular fa-circle"}></i>
+                                                <span>{l.title}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                );
+                            })}
+                        </aside>
+
+                        <article className="lp-main">
+                            <div className="lp-crumb">Module {activeLesson.moduleIndex + 1}: {activeLesson.moduleTitle}</div>
+                            <h1>{activeLesson.title}</h1>
+                            <div className="lp-meta">
+                                Lesson {activeIndex + 1} of {total}
+                                {activeLesson.duration ? ` · ${activeLesson.duration} min` : ""}
+                            </div>
+
+                            <LessonContent text={activeLesson.content} />
+
+                            <div className="lp-nav">
+                                <button type="button" className="lp-btn" disabled={activeIndex <= 0} onClick={() => setActiveId(lessons[activeIndex - 1].id)}>
+                                    <i className="fa-solid fa-arrow-left"></i> Previous
+                                </button>
+                                {isCompleted ? (
+                                    <button type="button" className="lp-btn" disabled={activeIndex >= total - 1} onClick={() => toggleLesson(activeLesson, true)}>
+                                        Next <i className="fa-solid fa-arrow-right"></i>
+                                    </button>
+                                ) : (
+                                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                        {completedSet.has(activeLesson.id) && (
+                                            <button type="button" className="lp-btn lp-btn-done" onClick={() => toggleLesson(activeLesson, false)} title="Click to undo">
+                                                <i className="fa-solid fa-check"></i> Completed
+                                            </button>
+                                        )}
+                                        <button type="button" className="lp-btn lp-btn-primary" onClick={() => toggleLesson(activeLesson, true)}>
+                                            {activeIndex < total - 1
+                                                ? <>{completedSet.has(activeLesson.id) ? "Next" : "Mark complete & next"} <i className="fa-solid fa-arrow-right"></i></>
+                                                : <><i className="fa-solid fa-check"></i> {completedSet.has(activeLesson.id) ? "Done" : "Mark complete"}</>}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </article>
+                    </div>
+                )}
+
+                <div className={`lp-finish${isCompleted ? " complete" : allDone ? " ready" : ""}`}>
+                    <div>
+                        <i className={isCompleted ? "fa-solid fa-circle-check" : "fa-solid fa-flag-checkered"}></i>{" "}
+                        {isCompleted
+                            ? "You've completed this course. Great work!"
+                            : allDone
+                                ? "All lessons complete — claim your certificate."
+                                : `Complete all ${total} lessons to finish the course (${total - completedCount} left).`}
+                    </div>
+                    {isCompleted ? (
+                        <Link to={enrollment.certificateId ? `/certificate?id=${enrollment.certificateId}` : "/certificate"} className="db-complete-btn">
+                            <i className="fa-solid fa-certificate"></i> View Certificate
+                        </Link>
+                    ) : (
+                        <button type="button" className="db-complete-btn" disabled={!allDone || finishing} onClick={handleFinish} style={!allDone ? { opacity: 0.5, cursor: "not-allowed" } : undefined}>
+                            <i className="fa-solid fa-check"></i> {finishing ? "Saving..." : "Finish Course"}
+                        </button>
                     )}
-                </aside>
+                </div>
+
             </div>
         </PageShell>
     );

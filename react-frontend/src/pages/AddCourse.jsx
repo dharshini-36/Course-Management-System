@@ -4,6 +4,8 @@ import PageShell from "../components/PageShell";
 import PageCss from "../components/PageCss";
 import { useCourses } from "../context/CourseContext";
 import { addCourseAddedNotification } from "../data/notificationsStore";
+import CurriculumEditor from "../components/CurriculumEditor";
+import { cleanModules, emptyModule } from "../data/curriculum";
 
 export default function AddCourse() {
     const navigate = useNavigate();
@@ -20,6 +22,7 @@ export default function AddCourse() {
         topics: "",
         outcome: "",
     });
+    const [modules, setModules] = useState(() => [emptyModule()]);
     const [showError, setShowError] = useState(false);
 
     function update(field, value) {
@@ -47,6 +50,7 @@ export default function AddCourse() {
                 instructor: form.instructor.trim(),
                 topics: form.topics.trim(),
                 outcome: form.outcome.trim(),
+                modules: cleanModules(modules),
             });
 
             // Notify every student that a new course just went live.
@@ -183,6 +187,14 @@ export default function AddCourse() {
                                 onChange={(e) => update("outcome", e.target.value)}
                                 required
                             ></textarea>
+                        </div>
+                        <div className="form-group form-group-full">
+                            <label>Course Content (modules &amp; lessons)</label>
+                            <p className="admin-form-subtitle" style={{ margin: "0 0 10px" }}>
+                                Build the course structure now or leave it and add content later from Edit Course.
+                                Students must finish every lesson before they can complete the course.
+                            </p>
+                            <CurriculumEditor modules={modules} onChange={setModules} topics={form.topics} />
                         </div>
                         <div className="form-actions form-group-full">
                             <Link to="/admin-dashboard" className="secondary-form-btn">

@@ -16,16 +16,12 @@
 import apiClient from "../api/apiClient";
 import { addCertificate, getCertificateById, restoreCertificate } from "./certificatesStore";
 import { addCourseCompletedNotification } from "./notificationsStore";
+import { countLessons } from "./curriculum";
 
 function idOf(value) {
     if (!value) return "";
     if (typeof value === "string") return value;
     return value.id || value._id || "";
-}
-
-function countLessons(course) {
-    const topics = (course?.topics || "").split(",").map((t) => t.trim()).filter(Boolean);
-    return Math.max(1, topics.length);
 }
 
 /**
@@ -175,6 +171,19 @@ export async function markEnrollmentComplete(target) {
         status: res.data.enrollment.status === "completed" ? "Completed" : "In Progress",
         certificateId: res.data.enrollment.certificateId || certRecord.id,
     };
+}
+
+/**
+ * Saves partial progress (PUT /progress) as a student completes lessons.
+ * Capped at total-1 so the backend only flips the enrollment to "completed"
+ * through markEnrollmentComplete (which also issues the certificate).
+ */
+export async function saveLessonProgress({ courseId, completed, total }) {
+    await apiClient.put("/progress", {
+        courseId,
+        completedLessons: Math.min(completed, Math.max(0, total - 1)),
+        totalLessons: total,
+    });
 }
 
 /** Admin "clear all" (DELETE /enrollments/all). */

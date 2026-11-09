@@ -193,7 +193,7 @@ export default function AdminDashboard() {
                                         <td>{course.weeks} Weeks · {course.hours} Hours</td>
                                         <td>{course.rating}</td>
                                         <td style={{display: "flex", gap: "10px"}}>
-                                            <Link to={`/edit-course-login?course=${course.id}`} title="Edit Course">
+                                            <Link to={`/edit-course-login?course=${course.id}`} title="Edit Course & Manage Content (modules / lessons)">
                                                 <i className="fa-solid fa-pen-to-square"></i>
                                             </Link>
                                             <button

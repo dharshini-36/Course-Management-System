@@ -4,6 +4,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import PageCss from "../components/PageCss";
 import api from "../services/api";
 import { useCourses } from "../context/CourseContext";
+import CurriculumEditor from "../components/CurriculumEditor";
+import { cleanModules, getModules } from "../data/curriculum";
 
 function CourseMessage({ title, message }) {
     return (
@@ -79,6 +81,8 @@ function EditCourseForm({ course, courseId }) {
                 : []
     );
     const [newLearnItem, setNewLearnItem] = useState("");
+    // Saved modules, or ones generated from the topics so older courses can be edited too.
+    const [modules, setModules] = useState(() => getModules(initialCourse));
 
     function update(field, value) {
         setForm((prev) => ({ ...prev, [field]: value }));
@@ -114,6 +118,7 @@ function EditCourseForm({ course, courseId }) {
                 prerequisites: form.prerequisites.trim(),
                 learnItems,
                 outcome: learnItems[0] || "",
+                modules: cleanModules(modules),
             });
             navigate("/courses");
         } catch (err) {
@@ -326,6 +331,14 @@ function EditCourseForm({ course, courseId }) {
                                 onChange={(e) => update("topics", e.target.value)}
                             />
                         </div>
+                    </div>
+                    {/* ===== COURSE CONTENT ===== */}
+                    <div className="ec-section">
+                        <h2>
+                            <i className="fa-solid fa-book-open"></i>
+                            Course Content (Modules &amp; Lessons)
+                        </h2>
+                        <CurriculumEditor modules={modules} onChange={setModules} topics={form.topics} />
                     </div>
                     {/* ===== PREREQUISITES ===== */}
                     <div className="ec-section">

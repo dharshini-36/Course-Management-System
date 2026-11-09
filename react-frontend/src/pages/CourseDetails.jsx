@@ -2,6 +2,8 @@ import PageShell from "../components/PageShell";
 import { Link, useSearchParams } from "react-router-dom";
 import PageCss from "../components/PageCss";
 import { useCourses } from "../context/CourseContext";
+import { getModules } from "../data/curriculum";
+import "../styles/curriculum.css";
 
 export default function CourseDetails() {
     const [searchParams] = useSearchParams();
@@ -40,6 +42,7 @@ export default function CourseDetails() {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean);
+    const modules = getModules(course);
 
     return (
         <PageShell variant="student3">
@@ -62,21 +65,26 @@ export default function CourseDetails() {
                         <i className="fa-solid fa-list-ol"></i>
                         Course Content
                     </h2>
-                    {topics.length === 0 ? (
+                    {modules.length === 0 ? (
                         <p style={{ color: "var(--text-muted)" }}>No modules listed for this course yet.</p>
                     ) : (
                         <div className="unit-accordion">
-                            {topics.map((topic, i) => (
-                                <details className="c-details" key={topic} open={i === 0} style={{ marginBottom: "10px" }}>
+                            {modules.map((m, i) => (
+                                <details className="c-details" key={m.id} open={i === 0} style={{ marginBottom: "10px" }}>
                                     <summary className="view-details-btn">
                                         <i className="fa-solid fa-chevron-down"></i>
-                                        Unit {i + 1}: {topic}
+                                        Module {i + 1}: {m.title}
                                     </summary>
                                     <div className="c-details-body">
-                                        <p>
-                                            Work through the "{topic}" module at your own pace. When you've covered
-                                            everything in this course, mark it complete to unlock your certificate.
-                                        </p>
+                                        {m.description && <p>{m.description}</p>}
+                                        <ul className="syl-lessons">
+                                            {m.lessons.map((l) => (
+                                                <li key={l.id}>
+                                                    <i className="fa-regular fa-file-lines"></i>
+                                                    {l.title}{l.duration ? ` · ${l.duration} min` : ""}
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </div>
                                 </details>
                             ))}

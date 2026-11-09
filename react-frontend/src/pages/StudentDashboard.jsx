@@ -77,6 +77,18 @@ export default function StudentDashboard() {
                             <i className="fa-solid fa-magnifying-glass"></i>
                             Explore Courses
                         </Link>
+                        <Link to="/my-courses" className="db-explore-btn">
+                            <i className="fa-solid fa-book-open"></i>
+                            My Courses
+                        </Link>
+                        <Link to="/my-progress" className="db-explore-btn">
+                            <i className="fa-solid fa-chart-line"></i>
+                            My Progress
+                        </Link>
+                        <Link to="/chat" className="db-explore-btn">
+                            <i className="fa-solid fa-comments"></i>
+                            Chat
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -291,7 +303,7 @@ export default function StudentDashboard() {
                         ))
                     )}
                 </section>
-            </main>
+            </main>s
         </PageShell>
     );
 }
